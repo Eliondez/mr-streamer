@@ -8,4 +8,4 @@ class MarketData(models.Model):
     fake_data = models.TextField(verbose_name='Данные по товару (предварительно)')
 
     def __str__(self):
-        return f'{self.prefix_id} {self.name}'
+        return '{} {}'.format(self.prefix_id, self.name)
