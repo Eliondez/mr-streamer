@@ -1,7 +1,14 @@
 from django.contrib import admin
-from .models import MarketData
+from .models import MarketData, MarkerDataRecord
 
 
-# Register your models here.
+class MarketDataRecord(admin.TabularInline):
+    model = MarkerDataRecord
+    extra = 0
 
-admin.site.register(MarketData)
+
+class MarketDataAdmin(admin.ModelAdmin):
+    inlines = [MarketDataRecord, ]
+
+
+admin.site.register(MarketData, MarketDataAdmin)

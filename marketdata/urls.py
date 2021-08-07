@@ -1,12 +1,14 @@
-from django.urls import path, include
-from rest_framework import routers
+from django.urls import path
+from django.conf.urls import include
 from .viewsets import MarketDataViewSet
 
-# Routers provide an easy way of automatically determining the URL conf.
-router = routers.DefaultRouter()
-router.register(r'market_data', MarketDataViewSet)
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r'items', MarketDataViewSet, basename='market-items')
+urlpatterns = router.urls
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path(r'', include(router.urls)),
 ]
