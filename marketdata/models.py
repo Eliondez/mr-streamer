@@ -29,6 +29,20 @@ class MarketData(models.Model):
             )
         return res
 
+    @classmethod
+    def create_by_data(cls, data):
+        instance, created = cls.objects.get_or_create(
+            name=data.get('name'),
+            prefix_id=data.get('prefix_id'),
+            defaults={'json_data': data.get('json_data')}
+        )
+        if not created:
+            instance.json_data = data.get('json_data')
+            instance.save()
+        print('instance', instance)
+        print('created', created)
+        return instance, created
+
     class Meta:
         verbose_name = 'Данные по товару'
         verbose_name_plural = 'Товары'
@@ -44,3 +58,7 @@ class MarkerDataRecord(models.Model):
     class Meta:
         verbose_name = 'Сделка'
         verbose_name_plural = 'Сделки по товарам'
+
+    @property
+    def name(self):
+        return self.market_data.name
