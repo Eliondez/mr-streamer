@@ -4,6 +4,8 @@ from decimal import Decimal
 
 
 class MarketData(models.Model):
+    DATE_FORMAT = '%b %d %Y %H: +0'
+
     updated = models.DateTimeField(auto_now=True, verbose_name='Дата обновления')
     prefix_id = models.PositiveIntegerField(verbose_name='Префикс', help_text='Например, 730 из ссылки')
     name = models.CharField(max_length=300, verbose_name='Идентификатор товара', help_text='Например "Glove Case"')
@@ -20,7 +22,7 @@ class MarketData(models.Model):
 
         self.records.all().delete()
         for item in self.json_data:
-            datetime_object = datetime.strptime(item[0], '%b %d %Y %H: +0')
+            datetime_object = datetime.strptime(item[0], self.DATE_FORMAT)
             MarkerDataRecord.objects.create(
                 market_data=self,
                 timestamp=datetime_object,
