@@ -1,3 +1,5 @@
+from django.db.models import Count
+
 from rest_framework import response, status, viewsets
 from rest_framework import filters, pagination, mixins
 from .models import MarketData
@@ -52,5 +54,5 @@ class MarketDataLiteViewSet(mixins.UpdateModelMixin,
         }.get(self.action, self.serializer_class)
 
     def get_queryset(self):
-        return MarketData.objects.all().order_by('id').filter(id__lte=2200).exclude(name__istartswith='★').exclude(name__icontains='key')
-        # return MarketData.objects.annotate(num_data=Count('records')).filter(num_data__gt=0).order_by('id')
+        # return MarketData.objects.all().order_by('id').filter(id__lte=2200).exclude(name__icontains='key')
+        return MarketData.objects.exclude(name__istartswith='★').order_by('id')
