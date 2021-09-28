@@ -13,6 +13,24 @@ def plain_post_view(request):
     return HttpResponse()
 
 
+def test_view(request):
+    start = 0
+    step = 100
+    qs = MarketData.objects.order_by('id')
+    first_id = 17000  # qs.first().id
+    last_id = first_id + 1000  # qs.last().id
+    current_id = first_id
+    print('first_id', first_id, 'last_id', last_id)
+    step = 100
+    while current_id < last_id:
+        items = list(qs.filter(id__gte=current_id)[:step])
+        for item in items:
+            item.create_sub_items()
+        current_last = items[-1].id
+        current_id = current_last + 1
+    return HttpResponse()
+
+
 def market_data_search_view(request):
     name = request.GET.get('name', '')
     if len(name) < 3:
@@ -47,6 +65,8 @@ class GetChartDataByIdsView(APIView):
             if i.market_data_id not in min_date_by_md_id:
                 min_date_by_md_id[i.market_data_id] = i.timestamp
             delta = (i.timestamp - min_date_by_md_id[i.market_data_id]).days + 1
+            if delta > 1000:
+                continue
             if delta not in deltas_by_delta:
                 deltas_by_delta[delta] = {
                     'day': delta
@@ -55,6 +75,6 @@ class GetChartDataByIdsView(APIView):
         market_items = MarketData.objects.filter(id__in=md_ids)
         series = [{'valueField': 'id{}'.format(i.id), 'name': i.name} for i in market_items]
         return Response({
-            'data': deltas_by_delta.values(),
+            'data': list(deltas_by_delta.values()),
             'series':  series
         })

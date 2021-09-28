@@ -8,7 +8,13 @@ class MarketDataFullSerializer(serializers.HyperlinkedModelSerializer):
         fields = ['updated', 'prefix_id', 'name']
 
 
+class MarketDataUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketData
+        fields = ['id', 'rating']
+
+
 class MarketDataLiteSerializer(serializers.ModelSerializer):
     class Meta:
         model = MarketData
-        fields = ['id', 'name', 'prefix_id']
+        fields = ['id', 'name', 'prefix_id', 'rating']

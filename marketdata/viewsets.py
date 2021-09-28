@@ -1,8 +1,7 @@
 from rest_framework import response, status, viewsets
-from rest_framework import filters, pagination
-from django.db.models import Count
+from rest_framework import filters, pagination, mixins
 from .models import MarketData
-from .serializers import MarketDataFullSerializer, MarketDataLiteSerializer
+from marketdata import serializers as md_serializers
 
 
 class StandardResultsSetPagination(pagination.PageNumberPagination):
@@ -12,7 +11,7 @@ class StandardResultsSetPagination(pagination.PageNumberPagination):
 
 
 class MarketDataViewSet(viewsets.ViewSet):
-    serializer_class = MarketDataFullSerializer
+    serializer_class = md_serializers.MarketDataFullSerializer
     pagination_class = pagination.PageNumberPagination
 
     def list(self, request):
@@ -39,11 +38,19 @@ class MarketDataViewSet(viewsets.ViewSet):
         return response.Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class MarketDataLiteViewSet(viewsets.ModelViewSet):
-    serializer_class = MarketDataLiteSerializer
+class MarketDataLiteViewSet(mixins.UpdateModelMixin,
+                            mixins.ListModelMixin,
+                            viewsets.GenericViewSet):
+    serializer_class = md_serializers.MarketDataLiteSerializer
     pagination_class = StandardResultsSetPagination
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name', )
 
+    def get_serializer_class(self):
+        return {
+            'update': md_serializers.MarketDataUpdateSerializer
+        }.get(self.action, self.serializer_class)
+
     def get_queryset(self):
-        return MarketData.objects.annotate(num_data=Count('records')).filter(num_data__gt=0).order_by('id')
+        return MarketData.objects.all().order_by('id').filter(id__lte=2200).exclude(name__istartswith='★').exclude(name__icontains='key')
+        # return MarketData.objects.annotate(num_data=Count('records')).filter(num_data__gt=0).order_by('id')
