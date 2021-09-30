@@ -3,7 +3,6 @@ function isNotEmpty(value) {
 }
 
 function parseSearchFromFilter(loadOptions, args) {
-    console.log('loadOptions', loadOptions);
     const filter = loadOptions.filter;
     if (filter && filter.length === 3) {
         args['search'] = filter[2]
@@ -11,22 +10,40 @@ function parseSearchFromFilter(loadOptions, args) {
 }
 
 $(function(){
-    let itemsGrid, itemsChart;
+    let itemsChart;
+    const aggregateValues = [1, 5, 10, 25, 50, 100];
+    const maxPointsValues = [100, 500, 1000];
+    let currentAggregateCount = aggregateValues[3];
+    let currentMaxPointsValue = maxPointsValues[2];
+    let idsToLoad = [];
+
+    $("#aggregateIntervalRadio").dxRadioGroup({
+        items: aggregateValues,
+        value: currentAggregateCount,
+        layout: "horizontal",
+        onValueChanged: function(e){
+            currentAggregateCount = e.value;
+            itemsChart.option('argumentAxis.tickInterval', e.value);
+            itemsChart.option('argumentAxis.aggregationInterval', e.value);
+        }
+    });
+
+    $("#maxPointsRadio").dxRadioGroup({
+        items: maxPointsValues,
+        value: currentMaxPointsValue,
+        layout: "horizontal",
+        onValueChanged: function(e){
+            currentMaxPointsValue = e.value;
+            loadChartDataByIds();
+        }
+    });
+
     let store = new DevExpress.data.CustomStore({
         key: "id",
         load: function (loadOptions) {
             const deferred = $.Deferred(),
-                args = {};
+                  args = {};
             parseSearchFromFilter(loadOptions, args);
-            let res = filterToQuery(loadOptions.filter);
-            console.log('res', res);
-
-            // params.push(...filterToQuery(loadOptions.filter, {
-            //     category: 'category',
-            //     start_month: 'start_month',
-            //     end_month: 'end_month',
-            // }));
-
             let page_size = loadOptions['take'];
             let skip = loadOptions['skip'];
             args['page'] = skip / page_size + 1;
@@ -49,15 +66,13 @@ $(function(){
             return deferred.promise();
         },
         update: function(id, options) {
-            console.log('options', id, options);
             const deferred = $.Deferred();
             $.ajax({
                 url: `/api/market-data/search_items/${id}/`,
                 method: 'PUT',
                 dataType: "json",
                 data: options,
-                success: function(result) {
-                    console.log('OK');
+                success: function() {
                     deferred.resolve();
                 },
                 error: function() {
@@ -70,7 +85,7 @@ $(function(){
         }
     });
 
-    itemsGrid = $("#items-grid").dxDataGrid({
+    $("#items-grid").dxDataGrid({
         dataSource: store,
         showBorders: true,
         remoteOperations: true,
@@ -119,10 +134,11 @@ $(function(){
             mode: "multiple"
         },
         onSelectionChanged: function(selectedItems) {
-            loadChardDataByIds(selectedItems.selectedRowKeys);
+            idsToLoad = selectedItems.selectedRowKeys;
+            loadChartDataByIds();
         },
-        height: 400,
-    }).dxDataGrid("instance");
+        height: 350,
+    });
 
     itemsChart = $("#chart").dxChart({
         dataSource: [],
@@ -139,8 +155,8 @@ $(function(){
             itemTextPosition: "bottom"
         },
         argumentAxis: {
-            tickInterval: 50,
-            aggregationInterval: 50,
+            tickInterval: currentAggregateCount,
+            aggregationInterval: currentAggregateCount,
             label: {
                 format: {
                     type: "decimal"
@@ -152,12 +168,22 @@ $(function(){
             linearThreshold: -3
         },
         series: [],
+        tooltip: {
+            enabled: true,
+            contentTemplate: function(info, container) {
+                const content = $('<div>');
+                $('<div>').text(`День: ${info.argument}`).appendTo(content);
+                $('<div>').text(`Цена: ${parseInt(info.value)}`).appendTo(content);
+                content.appendTo(container);
+            }
+        },
         size: {
             height: 500
         }
     }).dxChart('instance');
 
-    function loadChardDataByIds(ids) {
+    function loadChartDataByIds() {
+        let ids = idsToLoad;
         if (ids.length === 0) {
             itemsChart.option('series', [])
             itemsChart.option('dataSource', [])
@@ -167,20 +193,15 @@ $(function(){
             url: `/api/market-data/get_chart_data_by_ids/?ids=${ids.join(',')}`,
             dataType: "json",
             success: function(result) {
+                let data = result.data;
+                data = data.slice(0, currentMaxPointsValue)
                 itemsChart.option('series', result.series)
-                itemsChart.option('dataSource', result.data)
+                itemsChart.option('dataSource', data)
             },
             error: function(e) {
-                console.log('Error', e)
+                console.error(e)
             },
             timeout: 5000
         });
     }
-
-    console.log('hehehre!');
-    $(window).on('click', '.reduce-rating-1', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('increase', this);
-    })
 });

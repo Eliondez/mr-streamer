@@ -51,6 +51,7 @@ class GetChartDataByIdsView(APIView):
     def get(self, request):
         res = Response([])
         ids_string = request.GET.get('ids')
+        max_days = request.GET.get('max_days', 1000)
         if not ids_string:
             return res
         ids = [int(md_id) for md_id in ids_string.split(',') if md_id]
@@ -65,7 +66,7 @@ class GetChartDataByIdsView(APIView):
             if i.market_data_id not in min_date_by_md_id:
                 min_date_by_md_id[i.market_data_id] = i.timestamp
             delta = (i.timestamp - min_date_by_md_id[i.market_data_id]).days + 1
-            if delta > 1000:
+            if delta > max_days:
                 continue
             if delta not in deltas_by_delta:
                 deltas_by_delta[delta] = {

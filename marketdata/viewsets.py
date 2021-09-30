@@ -3,7 +3,7 @@ from django.db.models import Count
 from rest_framework import response, status, viewsets
 from rest_framework import filters, pagination, mixins
 from .models import MarketData
-from marketdata import serializers as md_serializers
+from . import serializers as md_serializers
 
 
 class StandardResultsSetPagination(pagination.PageNumberPagination):
@@ -54,5 +54,4 @@ class MarketDataLiteViewSet(mixins.UpdateModelMixin,
         }.get(self.action, self.serializer_class)
 
     def get_queryset(self):
-        # return MarketData.objects.all().order_by('id').filter(id__lte=2200).exclude(name__icontains='key')
         return MarketData.objects.exclude(name__istartswith='★').order_by('id')
